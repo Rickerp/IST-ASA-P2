@@ -133,16 +133,21 @@ void push(edge* e, vertex* v) {
     }
 }
 
-void ins_q(vertex** Q, int* len, int* ptrN, vertex* vi, vertex* no) {}
+void ins_q(vertex** Q, int* len, int* ptrN, vertex* vi, vertex* no) {
+    int nQ = *ptrN;
+    if (*len <= *ptrN + 1) {
+        *len *= *len;
+        Q = (vertex**)realloc(Q, sizeof(vertex*) * (*len));
+    }
+    if (vi != no) Q[nQ++] = vi;
+    *ptrN = nQ;
+}
 
 void push_relabel(graph* G) {
     int q_len = G->nE * G->nV;
     edge** v_edges = (edge**)malloc(sizeof(edge*) * G->nE);
     vertex** Q = (vertex**)malloc(sizeof(vertex*) * q_len);
-    for (int i = 0; i < G->nSup; i++) {
-        printf("i=%d/l=%d\n", i, q_len);
-        Q[i] = &G->V[i + 2];
-    }
+    for (int i = 0; i < G->nSup; i++) Q[i] = &G->V[i + 2];
 
     int q_index = 0, nQ = G->nSup;
     while (Q[q_index] != NULL) {
@@ -155,14 +160,12 @@ void push_relabel(graph* G) {
                 if (isBackEdge(v_edges[edge_index], Q[q_index])) {
                     if (Q[q_index]->h > v_edges[edge_index]->o->h) {
                         push(v_edges[edge_index], Q[q_index]);
-                        if (v_edges[edge_index]->o != &G->V[0])
-                            Q[nQ++] = v_edges[edge_index]->o;
+                        ins_q(Q, &q_len, &nQ, v_edges[edge_index]->o, &G->V[0]);
                     }
                 } else {
                     if (Q[q_index]->h > v_edges[edge_index]->d->h) {
                         push(v_edges[edge_index], Q[q_index]);
-                        if (v_edges[edge_index]->d != &G->V[1])
-                            Q[nQ++] = v_edges[edge_index]->d;
+                        ins_q(Q, &q_len, &nQ, v_edges[edge_index]->d, &G->V[1]);
                     }
                 }
                 edge_index++;
@@ -173,6 +176,8 @@ void push_relabel(graph* G) {
     free(v_edges);
     free(Q);
 }
+
+void parse_output(graph* G) { printf("%d\n", -G->V[0].e); }
 
 void free_graph(graph* G) {
     free(G->V);
@@ -186,7 +191,7 @@ void print_edge(vertex* pV, edge* e) {
 }
 
 void print_graph(graph* G) {
-    printf("GRAPH (V, E)(nSuppliers) = (%d, %d)(%d):\n\n", G->nV, G->nE,
+    printf("\nGRAPH (V, E)(nSuppliers) = (%d, %d)(%d):\n", G->nV, G->nE,
            G->nSup);
     for (int i = 0; i < G->nE; i++) print_edge(G->V, &G->E[i]);
 }
@@ -194,9 +199,9 @@ void print_graph(graph* G) {
 int main() {
     graph* G = (graph*)malloc(sizeof(graph));
     parse_input(G);
-    print_graph(G);
     push_relabel(G);
-    print_graph(G);
+    parse_output(G);
+    // print_graph(G);
     free_graph(G);
 }
 
