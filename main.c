@@ -22,7 +22,19 @@ typedef struct graph {
     int nSup;
 } graph;
 
+typedef struct node {
+    void* data;
+    struct node* next;
+} node;
+
 #define MIN(X, Y) (X < Y ? X : Y)
+
+node* new_node(void* data, node* next) {
+    node* n = (node*)malloc(sizeof(node));
+    n->data = data;
+    n->next = next;
+    return n;
+}
 
 edge new_edge(vertex* o, vertex* d, int f, int c) {
     edge e;
@@ -177,17 +189,21 @@ void push_relabel(graph* G) {
     free(Q);
 }
 
-void parse_output(graph* G) { printf("%d\n", -G->V[0].e); }
-
-void free_graph(graph* G) {
-    free(G->V);
-    free(G->E);
-    free(G);
+void print_node(graph* G, node* n) {
+    for (node* i = n; i != NULL; i = i->next)
+        printf("%ld ", ((vertex*)i->data) - G->V);
 }
 
-void print_edge(vertex* pV, edge* e) {
-    printf("{ %ld:(%d,%d) -> %ld:(%d,%d), %d/%d} \n", e->o - pV, e->o->h,
-           e->o->e, e->d - pV, e->d->h, e->d->e, e->c, e->f);
+void print_hash(graph* G, node** h, int max) {
+    for (int i = 0; i < max; i++) {
+        printf("\n%d: ", i);
+        print_node(G, h[i]);
+    }
+}
+
+void print_edge(vertex* startPtr, edge* e) {
+    printf("{ %ld:(%d,%d) -> %ld:(%d,%d), %d/%d} \n", e->o - startPtr, e->o->h,
+           e->o->e, e->d - startPtr, e->d->h, e->d->e, e->c, e->f);
 }
 
 void print_graph(graph* G) {
@@ -196,12 +212,86 @@ void print_graph(graph* G) {
     for (int i = 0; i < G->nE; i++) print_edge(G->V, &G->E[i]);
 }
 
+void parse_output(graph* G) {
+    // FIRST LINE OUTPUT : MAXIMUM FLOW
+    printf("%d\n", -G->V[0].e);
+
+    // DEALING WITH LAST LINES OUTPUT : EDGES TO BE RAISED
+    int max_h = 2 * G->nV;
+    node** h_list = (node**)malloc(sizeof(node*) * max_h);
+
+    for (int i = 0; i < G->nV; i++) {
+        if (i + 1 >= max_h) {
+            max_h *= 2;
+            h_list = (node**)realloc(h_list, sizeof(node*) * max_h);
+        }
+        h_list[G->V[i].h] = new_node(&G->V[i], h_list[G->V[i].h]);
+    }
+
+    node *t_side = NULL, *s_side = NULL;
+
+    int i_gap = -1;
+    while (h_list[++i_gap] != NULL)
+        for (node* i_node = h_list[i_gap]; i_node != NULL;
+             i_node = i_node->next)
+            t_side = new_node(i_node->data, t_side);
+
+    // Beginning of the gap
+    while (h_list[++i_gap] == NULL)
+        ;
+    // End of the gap
+    i_gap -= 1;
+    while (h_list[++i_gap] != NULL)
+        for (node* i_node = h_list[i_gap]; i_node != NULL;
+             i_node = i_node->next)
+            s_side = new_node(i_node->data, s_side);
+
+    node* cut = NULL;
+    for (int i = 0; i < G->nE; i++) {
+        int flag_so = 0;
+
+        for (node* i_node = s_side; i_node != NULL; i_node = i_node->next) {
+            if (G->E[i].o == ((vertex*)i_node->data)) {
+                flag_so = 1;
+                break;
+            }
+        }
+        if (flag_so)  // origin of edge is in the s-side
+            for (node* i_node = t_side; i_node != NULL; i_node = i_node->next) {
+                if (G->E[i].d == i_node->data) {
+                    cut = new_node(&G->E[i], cut);
+                    break;
+                }
+            }
+        else  // origin of edge is in the t-side
+            for (node* i_node = s_side; i_node != NULL; i_node = i_node->next) {
+                if (G->E[i].d == i_node->data) {
+                    cut = new_node(&G->E[i], cut);
+                    break;
+                }
+            }
+    }
+
+    // Having the cut edges, we just need to figure out which are whom
+
+    for (node* i_node = cut; i_node != NULL; i_node = i_node->next)
+        if ((((edge*)i_node->data)->o - G->V) >= (G->nSup + 2))
+            printf("%ld", ((edge*)i_node->data)->o - G->V);
+    printf("\n");
+}
+
+void free_graph(graph* G) {
+    free(G->V);
+    free(G->E);
+    free(G);
+}
+
 int main() {
     graph* G = (graph*)malloc(sizeof(graph));
     parse_input(G);
     push_relabel(G);
-    parse_output(G);
     // print_graph(G);
+    parse_output(G);
     free_graph(G);
 }
 
