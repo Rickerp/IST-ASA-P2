@@ -1,5 +1,5 @@
 CC 		= gcc
-CFLAGS 	= -Wall -pedantic -g
+CFLAGS 	= -O3 -ansi -Wall -pedantic -g -lm
 FILE 	= main.c
 OUT		= $(FILE:%.c=%.run)
 all:
