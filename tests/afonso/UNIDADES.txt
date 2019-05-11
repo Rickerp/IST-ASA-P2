@@ -1,0 +1,7 @@
+O gráfico da esquerda mede o tempo do programa para cada input.
+O lado dos YY está em MILISSEGUNDOS e o XX está em MILHARES de vértices.
+
+O gráfico da direita mede o máximo de memória utilizada pelo programa para
+cada input. A memória mede o Heap (mallocs), Stack (pilha) e Text (texto do
+programa, não é lá muito relevante).
+O lado dos YY está em MEGABYTES e o XX está em MILHARES de vértices.
