@@ -74,7 +74,7 @@ void parse_input(graph* G) {
     int eo, ed, ec, flow, s_f = 0;
     int nSuppliers, nStations, nEdges, i;
 
-    if (scanf("%d %d %d", &nSuppliers, &nStations, &nEdges) != 3) exit(1);
+    if (scanf("%d %d %d", &nSuppliers, &nStations, &nEdges) != 3) return;
 
     G->nV = nSuppliers + nStations * 2 + 2;
     G->nE = nEdges + nSuppliers + nStations;
@@ -85,7 +85,7 @@ void parse_input(graph* G) {
     G->V[0] = new_vertex(0, 0);
     G->V[1] = new_vertex(0, G->nV);
     for (i_edge = 0; i_edge < nSuppliers; i_edge++) {
-        if (scanf("%d", &v_c) != 1) exit(1);
+        if (scanf("%d", &v_c) != 1) return;
         G->V[i_edge + 2] = new_vertex(0, 0);
         G->E[i_edge] = new_edge(&G->V[i_edge + 2], &G->V[0], 0, v_c);
     }
@@ -94,13 +94,13 @@ void parse_input(graph* G) {
         s = i_sStation(G, i);
         f = i_fStation(G, i);
         G->V[s] = G->V[f] = new_vertex(0, 0);
-        if (scanf("%d", &v_c) != 1) exit(1);
+        if (scanf("%d", &v_c) != 1) return;
         G->E[i_edge++] = new_edge(&G->V[s], &G->V[f], 0, v_c);
     }
 
     for (i = 0; i < nEdges; i++) {
         flow = 0;
-        if (scanf("%d %d %d", &eo, &ed, &ec) != 3) exit(1);
+        if (scanf("%d %d %d", &eo, &ed, &ec) != 3) return;
 
         if (ed == 1) {
             flow = ec;
@@ -161,51 +161,64 @@ void push(edge* e, vertex* v) {
     }
 }
 
-void ins_q(vertex** Q, int* len, int* ptrN, vertex* vi, vertex* no) {
-    int nQ = *ptrN;
-    if (*len <= *ptrN + 1) {
-        *len *= *len;
-        Q = (vertex**)realloc(Q, sizeof(vertex*) * (*len));
-    }
-    if (vi != no) Q[nQ++] = vi;
-    *ptrN = nQ;
+void print_vertex_node(graph* G, node* n) {
+    node* i;
+    for (i = n; i != NULL; i = i->next)
+        printf("%d -> ", vIndex(G->V, (vertex*)i->data));
+    printf("\n");
 }
 
 void push_relabel(graph* G) {
-    int q_len = G->nE * G->nV;
-    int i, nQ = 0, q_index = 0, edge_index;
+    int i, edge_index, first = 1;
     edge** v_edges = (edge**)malloc(sizeof(edge*) * G->nE);
-    vertex** Q = (vertex**)malloc(sizeof(vertex*) * q_len);
-    for (i = 0; i < q_len; i++) Q[i] = NULL;
+    node *temp, *q_tail = NULL, *q_head = NULL;
 
     for (i = 0; i < G->nE; i++)
-        if (G->E[i].o == &G->V[1]) Q[nQ++] = G->E[i].d;
+        if (G->E[i].o == &G->V[1]) {
+            q_head = new_node(G->E[i].d, q_head);
+            if (first) {
+                q_tail = q_head;
+                first = 0;
+            }
+        }
 
-    while (Q[q_index] != NULL) {
-        while (Q[q_index]->e > 0) {
-            find_edges_av(v_edges, G, Q[q_index]);
-            Q[q_index]->h = edges_min_h(Q[q_index], v_edges) + 1;
+    while (q_head != NULL) {
+        while (((vertex*)q_head->data)->e > 0) {
+            find_edges_av(v_edges, G, (vertex*)q_head->data);
+            ((vertex*)q_head->data)->h =
+                edges_min_h((vertex*)q_head->data, v_edges) + 1;
 
             edge_index = 0;
             while (v_edges[edge_index] != NULL) {
-                if (isBackEdge(v_edges[edge_index], Q[q_index])) {
-                    if (Q[q_index]->h > v_edges[edge_index]->o->h) {
-                        push(v_edges[edge_index], Q[q_index]);
-                        ins_q(Q, &q_len, &nQ, v_edges[edge_index]->o, &G->V[1]);
+                if (isBackEdge(v_edges[edge_index], (vertex*)q_head->data)) {
+                    if (((vertex*)q_head->data)->h >
+                        v_edges[edge_index]->o->h) {
+                        push(v_edges[edge_index], (vertex*)q_head->data);
+                        if (v_edges[edge_index]->o != &G->V[1]) {
+                            q_tail->next =
+                                new_node(v_edges[edge_index]->o, NULL);
+                            q_tail = q_tail->next;
+                        }
                     }
                 } else {
-                    if (Q[q_index]->h > v_edges[edge_index]->d->h) {
-                        push(v_edges[edge_index], Q[q_index]);
-                        ins_q(Q, &q_len, &nQ, v_edges[edge_index]->d, &G->V[0]);
+                    if (((vertex*)q_head->data)->h >
+                        v_edges[edge_index]->d->h) {
+                        push(v_edges[edge_index], (vertex*)q_head->data);
+                        if (v_edges[edge_index]->d != &G->V[0]) {
+                            q_tail->next =
+                                new_node(v_edges[edge_index]->d, NULL);
+                            q_tail = q_tail->next;
+                        }
                     }
                 }
                 edge_index++;
             }
         }
-        q_index++;
+        temp = q_head;
+        q_head = q_head->next;
+        free(temp);
     }
     free(v_edges);
-    free(Q);
 }
 
 void free_nodes(node* head) {
@@ -340,21 +353,6 @@ void parse_output(graph* G) {
             s_node->prev = min_node;
         } else
             s_node = s_node->next;
-        if ((min_node != NULL && min_node->prev == min_node) ||
-            (i_node != NULL && i_node->prev == i_node) ||
-            (s_node != NULL && s_node->prev == s_node)) {
-            printf(
-                "\ns: (%d, %d)\ns->p: (%d, %d)\nm->p: (%d, %d)\nm: (%d, "
-                "%d)\nm->n: "
-                "(%d, %d)\n\n",
-                (*(int**)s_node->data)[0], (*(int**)s_node->data)[1],
-                (*(int**)s_node->prev->data)[0],
-                (*(int**)s_node->prev->data)[1],
-                (*(int**)min_node->prev->data)[0],
-                (*(int**)min_node->prev->data)[1], (*(int**)min_node->data)[0],
-                (*(int**)min_node->data)[1], (*(int**)min_node->next->data)[0],
-                (*(int**)min_node->next->data)[1]);
-        }
     }
     /* List of cut edges sorted */
 
@@ -407,6 +405,18 @@ void free_graph(graph* G) {
     free(G->V);
     free(G->E);
     free(G);
+}
+
+void print_edge(vertex* startPtr, edge* e) {
+    printf("{ %ld:(%d,%d) -> %ld:(%d,%d), %d/%d } \n", e->o - startPtr, e->o->h,
+           e->o->e, e->d - startPtr, e->d->h, e->d->e, e->c, e->f);
+}
+
+void print_graph(graph* G) {
+    int i;
+    printf("\nGRAPH (V, E)(nSuppliers) = (%d, %d)(%d):\n", G->nV, G->nE,
+           G->nSup);
+    for (i = 0; i < G->nE; i++) print_edge(G->V, &G->E[i]);
 }
 
 int main() {
