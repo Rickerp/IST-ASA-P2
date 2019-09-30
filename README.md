@@ -1,7 +1,7 @@
 # [ASA] Análise e Sintese de Algoritmos - Project 2
 
 ### Description 
-This repository contains the second project made for Analysis and Synthesis of Algorithms course.  
+This repository contains the second project of Analysis and Synthesis of Algorithms course.  
   
 It's a program that solves this problem (but in large scales):  
   
