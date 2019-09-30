@@ -53,6 +53,8 @@ Run in terminal: `./main.run`
 140
 5
 ```
+
+#### More examples and tests in larger scale in ![tests/](./tests/)
   
 #### More info of the project in ![proj2](./p2_v1.1.pdf) 
   
