@@ -58,3 +58,6 @@ Run in terminal: `./main.run`
   
 #### More info of the project in ![proj2](./p2_v1.1.pdf) 
   
+
+## Made by...
+&nbsp; &nbsp; Ricardo Fernandes - [<img src="https://github.githubassets.com/favicon.ico" width="17">](https://github.com/rickerp "rickerp") [<img src="https://lh3.googleusercontent.com/proxy/oq401pwCVsfk2PJuOfNyTxLKF9ZEztDHNE3ejoa7zgyGdjD8-jAiIEUTHXkpnQRychlZBaNsMPeFDjdkEB-TW3ORMtg0NNmpGdJGyr0" width="17">](https://www.linkedin.com/in/rickerp/ "rickerp")  
